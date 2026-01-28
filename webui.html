@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wav2Vec2-large-xlsr-hindi WebUI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+        .button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .button:hover {
+            background: #1d4ed8;
+        }
+        .textbox {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 10px;
+            min-height: 100px;
+            font-family: monospace;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+        .tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .status {
+            padding: 10px;
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            border-radius: 6px;
+            color: #1e40af;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wav2Vec2-large-xlsr-hindi 印地语语音识别模型 · WebUI 演示</h1>
+        <p class="subtitle">本界面以交互方式展示 Wav2Vec2-large-xlsr-hindi 模型的典型使用流程，包括模型加载状态监控、单段语音转文字以及词错误率评估等环节。</p>
+        
+        <div class="section">
+            <div class="section-title">模型加载</div>
+            <button class="button" onclick="loadModel()">加载模型（演示）</button>
+            <div class="status" id="status">尚未加载</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab(0)">单段语音识别</button>
+            <button class="tab" onclick="switchTab(1)">词错误率评估</button>
+        </div>
+
+        <div id="tab0" class="tab-content active">
+            <div class="section">
+                <div class="section-title">单段语音识别</div>
+                <p style="margin-bottom: 15px; color: #6b7280;">该功能模拟将一段印地语语音转换为文字，支持 16kHz 采样率的音频输入。</p>
+                <input type="file" accept="audio/*" style="margin-bottom: 15px; padding: 8px;">
+                <button class="button" onclick="transcribe()">开始识别（演示）</button>
+                <textarea class="textbox" id="transcribe-result" placeholder="识别结果将显示在这里..."></textarea>
+            </div>
+        </div>
+
+        <div id="tab1" class="tab-content">
+            <div class="section">
+                <div class="section-title">词错误率评估</div>
+                <p style="margin-bottom: 15px; color: #6b7280;">该功能模拟在 Common Voice 印地语测试集上评估模型性能，计算词错误率（WER）和字符错误率（CER）等指标。</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">预测文本</label>
+                        <textarea class="textbox" id="predictions" placeholder="输入模型识别的文本结果" style="min-height: 80px;"></textarea>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">参考文本</label>
+                        <textarea class="textbox" id="references" placeholder="输入标准参考文本" style="min-height: 80px;"></textarea>
+                    </div>
+                </div>
+                <button class="button" onclick="evaluate()">计算 WER（演示）</button>
+                <textarea class="textbox" id="evaluate-result" placeholder="评估结果将显示在这里..."></textarea>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">
+            <em>说明：当前为轻量级演示界面，未实际下载与加载任何大规模模型参数。实际使用需安装 transformers、torch、torchaudio 等依赖并加载模型权重。</em>
+        </div>
+    </div>
+
+    <script>
+        function loadModel() {
+            document.getElementById('status').textContent = '模型状态：Wav2Vec2-large-xlsr-hindi 已就绪（演示模式，未加载真实权重）';
+        }
+
+        function transcribe() {
+            document.getElementById('transcribe-result').value = 
+                '[演示] 语音识别结果：\n' +
+                'मैं हिंदी में बोल रहा हूँ। यह एक स्वचालित भाषण पहचान प्रणाली है।\n\n' +
+                '（中文翻译：我正在用印地语说话。这是一个自动语音识别系统。）\n\n' +
+                '注意：当前为演示模式，实际使用需加载模型权重进行推理。';
+        }
+
+        function evaluate() {
+            const predictions = document.getElementById('predictions').value;
+            const references = document.getElementById('references').value;
+            if (!predictions || !references) {
+                document.getElementById('evaluate-result').value = '请分别输入预测文本和参考文本。';
+                return;
+            }
+            document.getElementById('evaluate-result').value = 
+                '[演示] 评估结果：\n' +
+                '词错误率（WER）: 72.62%\n' +
+                '字符错误率（CER）: 15.34%\n\n' +
+                '注意：当前为演示模式，实际评估需使用真实模型推理结果。';
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+    </script>
+</body>
+</html>
